@@ -3,11 +3,13 @@ import gzip
 from pathlib import Path
 import pandas as pd
 
-def load_tx(path: str | Path, chunksize: int = 1_000_000) -> pd.DataFrame:
+def load_tx(path: str | Path) -> pd.DataFrame:
     p = Path(path)
-    open_fn = gzip.open if p.suffix == ".gz" else open
-    rows = []
-    with open_fn(p, "rt") as f:
-        for line in f:
-            rows.append(json.loads(line))
-    return pd.DataFrame(rows)
+    with open(p, "r") as f:
+        first_char = f.read(1)
+        f.seek(0)
+        if first_char == "[":
+            data = json.load(f)
+        else:
+            data = [json.loads(line) for line in f if line.strip()]
+    return pd.DataFrame(data)
